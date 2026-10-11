@@ -1,54 +1,24 @@
--- DerSpalter Hub v4 (Silence UI) - Logo Gizli
+-- DerSpalter Hub v4 (Silence UI)
+-- eleriumv2 kütüphanesiyle yazıldı
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
 
+-- ============================
+-- KÜTÜPHANEYİ YÜKLE (Silence'ın kütüphanesi)
+-- ============================
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/silencedevs/SilenceScripts/refs/heads/main/libraries/eleriumv2.luau?cache=" .. tostring(os.time()), true))()
 
+-- ============================
+-- PENCERE
+-- ============================
 local window = library:AddWindow("DerSpalter Hub", {
 	main_color = Color3.fromRGB(120, 80, 220),
 	min_size = Vector2.new(560, 700),
 	can_resize = true,
 })
-
--- ============================
--- LOGOYU GİZLE / D YAP
--- ============================
-task.spawn(function()
-	for i = 1, 60 do
-		task.wait(0.5)
-		local function scan(parent)
-			for _, obj in pairs(parent:GetDescendants()) do
-				pcall(function()
-					-- ImageLabel ise gizle
-					if obj:IsA("ImageLabel") then
-						local name = obj.Name:lower()
-						if name:find("logo") or name:find("icon") or name:find("image") or name:find("silence") or name:find("brand") or name:find("header") then
-							obj.Visible = false
-						end
-					end
-					-- Frame ismi logo/icon ise gizle
-					if obj:IsA("Frame") then
-						local name = obj.Name:lower()
-						if name:find("logo") or name:find("icon") or name:find("brand") then
-							obj.Visible = false
-						end
-					end
-					-- TextLabel "S" ise D yap
-					if obj:IsA("TextLabel") then
-						if obj.Text == "S" or obj.Text == "s" then
-							obj.Text = "D"
-							obj.TextColor3 = Color3.fromRGB(120, 80, 220)
-						end
-					end
-				end)
-			end
-		end
-		pcall(scan, game:GetService("CoreGui"))
-		pcall(scan, LocalPlayer:WaitForChild("PlayerGui"))
-	end
-end)
 
 -- ============================
 -- SEKMELER
@@ -75,7 +45,7 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ============================
--- LOCK POINT
+-- LOCK POINT MANTIĞI
 -- ============================
 local lockCFrame = nil
 
@@ -100,7 +70,7 @@ task.spawn(function()
 end)
 
 -- ============================
--- AUTO REP
+-- AUTO REP (orijinal hız)
 -- ============================
 task.spawn(function()
 	while true do
@@ -145,9 +115,19 @@ end)
 -- FARM SEKMESİ
 -- ============================
 farmTab:AddLabel("Strength Farming:")
-farmTab:AddSwitch("Auto Rep", function(state) getgenv().AutoRep = state end)
-farmTab:AddSwitch("Auto Rebirth", function(state) getgenv().AutoRebirth = state end)
-farmTab:AddSwitch("Lock Point", function(state) getgenv().LockPoint = state end)
+
+farmTab:AddSwitch("Auto Rep", function(state)
+	getgenv().AutoRep = state
+end)
+
+farmTab:AddSwitch("Auto Rebirth", function(state)
+	getgenv().AutoRebirth = state
+end)
+
+farmTab:AddSwitch("Lock Point", function(state)
+	getgenv().LockPoint = state
+end)
+
 farmTab:AddLabel("Not: Lock Point açıkken karakter olduğu yerde kalır.")
 
 -- ============================
@@ -184,14 +164,16 @@ for _, loc in ipairs(TP_LOCATIONS) do
 	tpTab:AddButton(loc.name, function()
 		local char = LocalPlayer.Character
 		if char and char:FindFirstChild("HumanoidRootPart") then
-			if getgenv().LockPoint then getgenv().LockPoint = false end
+			if getgenv().LockPoint then
+				getgenv().LockPoint = false
+			end
 			char.HumanoidRootPart.CFrame = CFrame.new(loc.pos + Vector3.new(0, 3, 0))
 		end
 	end)
 end
 
 -- ============================
--- INFO SEKMESİ
+-- INFO SEKMESİ (temiz)
 -- ============================
 infoTab:AddLabel("DerSpalter Hub v4")
 infoTab:AddLabel("Anti-AFK otomatik çalışır.")
