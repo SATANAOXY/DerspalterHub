@@ -9,8 +9,6 @@ local LocalPlayer = Players.LocalPlayer
 getgenv().AutoRep = false
 getgenv().AutoRebirth = false
 getgenv().LockPoint = false
-getgenv().RepSpeed = 0.08
-getgenv().RepCount = 5
 getgenv().RebirthDelay = 1
 
 -- ============================
@@ -46,35 +44,31 @@ task.spawn(function()
 	end
 end)
 
--- MuscleEvent'i bul
-local function findMuscleEvent()
-	local paths = { LocalPlayer, LocalPlayer:FindFirstChild("Character"), ReplicatedStorage, ReplicatedStorage:FindFirstChild("Remotes"), ReplicatedStorage:FindFirstChild("Events") }
-	for _, parent in pairs(paths) do
-		if parent then
-			local ev = parent:FindFirstChild("MuscleEvent")
-			if ev and ev:IsA("RemoteEvent") then return ev end
-		end
-	end
-	return nil
-end
-local muscleEvent = findMuscleEvent()
-
--- Auto Rep
+-- ============================
+-- AUTO REP (ORİJİNAL HIZ)
+-- ============================
 task.spawn(function()
 	while true do
-		if getgenv().AutoRep and muscleEvent then
+		if getgenv().AutoRep then
 			pcall(function()
-				for i = 1, getgenv().RepCount do
-					muscleEvent:FireServer("punch", "leftHand")
-					muscleEvent:FireServer("punch", "rightHand")
+				if LocalPlayer:FindFirstChild("MuscleEvent") then
+					for i = 1, 28 do
+						LocalPlayer.MuscleEvent:FireServer("rep")
+					end
+				elseif LocalPlayer:FindFirstChild("muscleEvent") then
+					for i = 1, 28 do
+						LocalPlayer.muscleEvent:FireServer("rep")
+					end
 				end
 			end)
 		end
-		task.wait(getgenv().RepSpeed)
+		task.wait(0.04)
 	end
 end)
 
--- Auto Rebirth
+-- ============================
+-- AUTO REBIRTH
+-- ============================
 task.spawn(function()
 	while true do
 		if getgenv().AutoRebirth then
@@ -99,7 +93,6 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Ana Frame
 local Main = Instance.new("Frame")
 Main.Name = "Main"
 Main.Size = UDim2.new(0, 360, 0, 400)
@@ -119,7 +112,6 @@ MainStroke.Thickness = 1.2
 MainStroke.Transparency = 0.3
 MainStroke.Parent = Main
 
--- Gradient Arka Plan
 local MainGradient = Instance.new("UIGradient")
 MainGradient.Rotation = 90
 MainGradient.Color = ColorSequence.new({
@@ -140,7 +132,6 @@ local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 14)
 TitleCorner.Parent = TitleBar
 
--- Başlık çubuğunun alt köşelerini düzleştirmek için ekstra frame
 local TitleFix = Instance.new("Frame")
 TitleFix.Size = UDim2.new(1, 0, 0, 14)
 TitleFix.Position = UDim2.new(0, 0, 1, -14)
@@ -156,7 +147,6 @@ TitleGradient.Color = ColorSequence.new({
 })
 TitleGradient.Parent = TitleBar
 
--- Logo Noktası
 local LogoDot = Instance.new("Frame")
 LogoDot.Size = UDim2.new(0, 8, 0, 8)
 LogoDot.Position = UDim2.new(0, 16, 0.5, -4)
@@ -168,7 +158,6 @@ local LogoDotCorner = Instance.new("UICorner")
 LogoDotCorner.CornerRadius = UDim.new(1, 0)
 LogoDotCorner.Parent = LogoDot
 
--- Başlık Yazısı
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -120, 1, 0)
 Title.Position = UDim2.new(0, 32, 0, 0)
@@ -180,7 +169,6 @@ Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TitleBar
 
--- Sürüm etiketi
 local VersionTag = Instance.new("TextLabel")
 VersionTag.Size = UDim2.new(0, 60, 0, 20)
 VersionTag.Position = UDim2.new(1, -130, 0.5, -10)
@@ -250,16 +238,30 @@ MinimizeBtn.MouseLeave:Connect(function()
 	TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}):Play()
 end)
 
+-- İçerik (minimize'de gerekli, önce tanımla)
+local Content = Instance.new("Frame")
+Content.Name = "Content"
+Content.Size = UDim2.new(1, -24, 1, -80)
+Content.Position = UDim2.new(0, 12, 0, 58)
+Content.BackgroundTransparency = 1
+Content.Parent = Main
+
+-- KÜÇÜLTME
 local minimized = false
 local originalSize = Main.Size
 
 MinimizeBtn.MouseButton1Click:Connect(function()
 	minimized = not minimized
 	if minimized then
+		Content.Visible = false
+		TitleFix.Visible = false
 		Main:TweenSize(UDim2.new(0, 360, 0, 44), "Out", "Quad", 0.25, true)
 		MinimizeBtn.Text = "+"
 	else
 		Main:TweenSize(originalSize, "Out", "Quad", 0.25, true)
+		task.wait(0.25)
+		Content.Visible = true
+		TitleFix.Visible = true
 		MinimizeBtn.Text = "–"
 	end
 end)
@@ -290,24 +292,12 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- ============================
--- İÇERİK
--- ============================
-local Content = Instance.new("Frame")
-Content.Name = "Content"
-Content.Size = UDim2.new(1, -24, 1, -80)
-Content.Position = UDim2.new(0, 12, 0, 58)
-Content.BackgroundTransparency = 1
-Content.Parent = Main
-
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Padding = UDim.new(0, 10)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Parent = Content
 
--- ============================
--- TOGGLE OLUŞTURMA FONKSİYONU
--- ============================
+-- TOGGLE OLUŞTURMA
 local function createToggle(name, icon, layoutOrder, callback)
 	local Btn = Instance.new("TextButton")
 	Btn.Size = UDim2.new(1, 0, 0, 52)
@@ -327,7 +317,6 @@ local function createToggle(name, icon, layoutOrder, callback)
 	Stroke.Transparency = 0.4
 	Stroke.Parent = Btn
 
-	-- İkon dairesi
 	local IconCircle = Instance.new("Frame")
 	IconCircle.Size = UDim2.new(0, 32, 0, 32)
 	IconCircle.Position = UDim2.new(0, 12, 0.5, -16)
@@ -348,7 +337,6 @@ local function createToggle(name, icon, layoutOrder, callback)
 	IconLabel.TextSize = 16
 	IconLabel.Parent = IconCircle
 
-	-- Başlık
 	local BtnTitle = Instance.new("TextLabel")
 	BtnTitle.Size = UDim2.new(1, -140, 0, 20)
 	BtnTitle.Position = UDim2.new(0, 56, 0, 10)
@@ -360,7 +348,6 @@ local function createToggle(name, icon, layoutOrder, callback)
 	BtnTitle.TextXAlignment = Enum.TextXAlignment.Left
 	BtnTitle.Parent = Btn
 
-	-- Durum yazısı
 	local StatusLabel = Instance.new("TextLabel")
 	StatusLabel.Size = UDim2.new(1, -140, 0, 16)
 	StatusLabel.Position = UDim2.new(0, 56, 0, 28)
@@ -372,7 +359,6 @@ local function createToggle(name, icon, layoutOrder, callback)
 	StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 	StatusLabel.Parent = Btn
 
-	-- Toggle anahtarı
 	local Switch = Instance.new("Frame")
 	Switch.Size = UDim2.new(0, 42, 0, 22)
 	Switch.Position = UDim2.new(1, -54, 0.5, -11)
@@ -395,7 +381,6 @@ local function createToggle(name, icon, layoutOrder, callback)
 	DotCorner.CornerRadius = UDim.new(1, 0)
 	DotCorner.Parent = SwitchDot
 
-	-- Hover efekti
 	Btn.MouseEnter:Connect(function()
 		TweenService:Create(Btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(36, 36, 50)}):Play()
 		TweenService:Create(Stroke, TweenInfo.new(0.15), {Color = Color3.fromRGB(90, 90, 140)}):Play()
@@ -405,11 +390,10 @@ local function createToggle(name, icon, layoutOrder, callback)
 		TweenService:Create(Stroke, TweenInfo.new(0.15), {Color = Color3.fromRGB(50, 50, 70)}):Play()
 	end)
 
-	-- Tıklama
 	local isOn = false
 	Btn.MouseButton1Click:Connect(function()
 		local result = callback(isOn)
-		if result == false then return end -- callback reddettiyse değiştirme
+		if result == false then return end
 
 		isOn = not isOn
 		if isOn then
@@ -430,35 +414,22 @@ local function createToggle(name, icon, layoutOrder, callback)
 	end)
 end
 
--- ============================
--- TOGGLE'LARI OLUŞTUR
--- ============================
-
--- Auto Rep
+-- TOGGLE'LAR
 createToggle("Auto Rep", "⚡", 1, function(currentState)
-	if not muscleEvent then
-		return false
-	end
-	local newState = not currentState
-	getgenv().AutoRep = newState
+	getgenv().AutoRep = not currentState
 	return true
 end)
 
--- Auto Rebirth
 createToggle("Auto Rebirth", "🔄", 2, function(currentState)
-	local newState = not currentState
-	getgenv().AutoRebirth = newState
+	getgenv().AutoRebirth = not currentState
 	return true
 end)
 
--- Lock Point
 createToggle("Lock Point", "🔒", 3, function(currentState)
-	local newState = not currentState
-	getgenv().LockPoint = newState
+	getgenv().LockPoint = not currentState
 	return true
 end)
 
--- Alt bilgi
 local Footer = Instance.new("TextLabel")
 Footer.Size = UDim2.new(1, 0, 0, 20)
 Footer.Position = UDim2.new(0, 0, 1, -25)
@@ -470,4 +441,4 @@ Footer.TextSize = 10
 Footer.LayoutOrder = 10
 Footer.Parent = Content
 
-print("DerSpalter Hub v2 yüklendi")
+print("DerSpalter Hub v2 yüklendi (orijinal rep hızı)")
