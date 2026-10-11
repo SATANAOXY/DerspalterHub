@@ -173,17 +173,14 @@ for _, loc in ipairs(TP_LOCATIONS) do
 end
 
 -- ============================
--- INFO SEKMESİ
+-- INFO SEKMESİ (temiz)
 -- ============================
 infoTab:AddLabel("DerSpalter Hub v4")
-infoTab:AddLabel("Silence UI kütüphanesiyle yazıldı.")
 infoTab:AddLabel("Anti-AFK otomatik çalışır.")
+infoTab:AddLabel("Lock Point açıkken karakter olduğu yerde kalır.")
+infoTab:AddLabel("TP atınca Lock Point otomatik kapanır.")
 infoTab:AddLabel("")
+infoTab:AddLabel("Farm sekmesinden özellikleri açıp kapatabilirsin.")
+infoTab:AddLabel("TP sekmesinden istediğin yere ışınlanabilirsin.")
 
-infoTab:AddButton("Discord'u Kopyala", function()
-	if type(setclipboard) == "function" then
-		setclipboard("https://discord.gg/9eFf93Kg8D")
-	end
-end)
-
-print("DerSpalter Hub v4 yüklendi (Silence UI)")
+print("DerSpalter Hub v4 yüklendi")
