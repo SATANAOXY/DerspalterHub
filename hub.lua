@@ -1,36 +1,68 @@
--- DerSpalter Hub + Auto Rep + Auto Rebirth
+-- DerSpalter Hub + Auto Rep + Auto Rebirth + Anti-AFK + Lock Point
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
 
 getgenv().AutoRep = false
 getgenv().AutoRebirth = false
+getgenv().LockPoint = false
 getgenv().RepSpeed = 0.08
 getgenv().RepCount = 5
 getgenv().RebirthDelay = 1
 
+-- ============================
+-- ANTI-AFK
+-- ============================
+LocalPlayer.Idled:Connect(function()
+	VirtualUser:CaptureController()
+	VirtualUser:ClickButton2(Vector2.new())
+end)
+
+-- ============================
+-- LOCK POINT MANTIĞI
+-- ============================
+local lockCFrame = nil
+
+task.spawn(function()
+	while true do
+		if getgenv().LockPoint then
+			local char = LocalPlayer.Character
+			if char then
+				local root = char:FindFirstChild("HumanoidRootPart")
+				if root then
+					-- İlk açıldığında mevcut konumu kilitle
+					if not lockCFrame then
+						lockCFrame = root.CFrame
+					end
+					-- Her frame karakteri geri çek
+					root.CFrame = lockCFrame
+					-- Hızı sıfırla, kaymasın
+					root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+					root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+				end
+			end
+		else
+			-- Kapatınca kilidi bırak
+			lockCFrame = nil
+		end
+		task.wait()
+	end
+end)
+
 -- MuscleEvent'i bul
 local function findMuscleEvent()
-	local paths = {
-		LocalPlayer,
-		LocalPlayer:FindFirstChild("Character"),
-		ReplicatedStorage,
-		ReplicatedStorage:FindFirstChild("Remotes"),
-		ReplicatedStorage:FindFirstChild("Events"),
-	}
+	local paths = { LocalPlayer, LocalPlayer:FindFirstChild("Character"), ReplicatedStorage, ReplicatedStorage:FindFirstChild("Remotes"), ReplicatedStorage:FindFirstChild("Events") }
 	for _, parent in pairs(paths) do
 		if parent then
 			local ev = parent:FindFirstChild("MuscleEvent")
-			if ev and ev:IsA("RemoteEvent") then
-				return ev
-			end
+			if ev and ev:IsA("RemoteEvent") then return ev end
 		end
 	end
 	return nil
 end
-
 local muscleEvent = findMuscleEvent()
 
 -- Auto Rep
@@ -56,9 +88,7 @@ task.spawn(function()
 				local rEvents = ReplicatedStorage:FindFirstChild("rEvents")
 				if rEvents then
 					local rebirthRemote = rEvents:FindFirstChild("rebirthRemote")
-					if rebirthRemote then
-						rebirthRemote:InvokeServer("rebirthRequest")
-					end
+					if rebirthRemote then rebirthRemote:InvokeServer("rebirthRequest") end
 				end
 			end)
 		end
@@ -74,8 +104,7 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Main = Instance.new("Frame")
-Main.Name = "Main"
-Main.Size = UDim2.new(0, 320, 0, 280)
+Main.Size = UDim2.new(0, 320, 0, 330) -- Yeni buton için yüksekliği artırdım
 Main.Position = UDim2.new(0.05, 0, 0.3, 0)
 Main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 Main.BorderSizePixel = 0
@@ -127,6 +156,7 @@ CloseBtn.Parent = TitleBar
 CloseBtn.MouseButton1Click:Connect(function()
 	getgenv().AutoRep = false
 	getgenv().AutoRebirth = false
+	getgenv().LockPoint = false
 	ScreenGui:Destroy()
 end)
 
@@ -163,9 +193,7 @@ TitleBar.InputBegan:Connect(function(input)
 		dragStart = input.Position
 		startPos = Main.Position
 		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
+			if input.UserInputState == Enum.UserInputState.End then dragging = false end
 		end)
 	end
 end)
@@ -195,7 +223,7 @@ UIListLayout.Padding = UDim.new(0, 8)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Parent = Content
 
--- Auto Rep Toggle
+-- Auto Rep Butonu
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Size = UDim2.new(1, 0, 0, 40)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
@@ -233,7 +261,7 @@ ToggleBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Auto Rebirth Toggle
+-- Auto Rebirth Butonu
 local RebirthBtn = Instance.new("TextButton")
 RebirthBtn.Size = UDim2.new(1, 0, 0, 40)
 RebirthBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
@@ -263,4 +291,34 @@ RebirthBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
-print("DerSpalter Hub yüklendi")
+-- Lock Point Butonu
+local LockBtn = Instance.new("TextButton")
+LockBtn.Size = UDim2.new(1, 0, 0, 40)
+LockBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+LockBtn.Text = "Lock Point  |  KAPALI"
+LockBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+LockBtn.Font = Enum.Font.Gotham
+LockBtn.TextSize = 14
+LockBtn.LayoutOrder = 3
+LockBtn.Parent = Content
+
+local LockCorner = Instance.new("UICorner")
+LockCorner.CornerRadius = UDim.new(0, 6)
+LockCorner.Parent = LockBtn
+
+local lockEnabled = false
+LockBtn.MouseButton1Click:Connect(function()
+	lockEnabled = not lockEnabled
+	getgenv().LockPoint = lockEnabled
+	if lockEnabled then
+		LockBtn.Text = "Lock Point  |  AÇIK"
+		LockBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 70)
+		LockBtn.TextColor3 = Color3.new(1, 1, 1)
+	else
+		LockBtn.Text = "Lock Point  |  KAPALI"
+		LockBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+		LockBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+	end
+end)
+
+print("DerSpalter Hub yüklendi (Anti-AFK + Lock Point dahil)")
