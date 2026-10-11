@@ -1,176 +1,299 @@
--- DerSpalter Hub + Auto Rep
+
+-- DerSpalter Hub | Minimal Edition
+-- UI prototipi | Mobil + PC
+
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-getgenv().AutoRep = false
+-- Önceki arayüzü temizle
+local OldGui = PlayerGui:FindFirstChild("DerSpalterHub")
+if OldGui then
+    OldGui:Destroy()
+end
 
--- Auto Rep
-task.spawn(function()
-	while true do
-		if getgenv().AutoRep then
-			pcall(function()
-				if LocalPlayer:FindFirstChild("muscleEvent") then
-					for i = 1, 28 do
-						LocalPlayer.muscleEvent:FireServer("rep")
-					end
-				end
-			end)
-		end
-		task.wait(0.04)
-	end
-end)
+-- Renkler
+local Colors = {
+    Background = Color3.fromRGB(24, 25, 28),
+    Header = Color3.fromRGB(31, 32, 36),
+    Button = Color3.fromRGB(39, 40, 45),
+    Accent = Color3.fromRGB(91, 170, 125),
+    Text = Color3.fromRGB(238, 238, 240),
+    Muted = Color3.fromRGB(155, 158, 165),
+    Border = Color3.fromRGB(55, 57, 63),
+    Red = Color3.fromRGB(220, 95, 95)
+}
 
--- UI
+-- ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "DerSpalterHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Parent = PlayerGui
 
+-- Ana pencere
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.new(0, 320, 0, 220)
-Main.Position = UDim2.new(0.05, 0, 0.3, 0)
-Main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+Main.Size = UDim2.fromOffset(340, 225)
+Main.Position = UDim2.new(0.5, -170, 0.5, -112)
+Main.BackgroundColor3 = Colors.Background
 Main.BorderSizePixel = 0
 Main.Active = true
+Main.ClipsDescendants = true
 Main.Parent = ScreenGui
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = Main
+Instance.new("UICorner", Main).CornerRadius =
+    UDim.new(0, 10)
 
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(60, 60, 70)
-UIStroke.Thickness = 1.5
-UIStroke.Parent = Main
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Colors.Border
+Stroke.Thickness = 1
+Stroke.Parent = Main
 
--- Başlık Çubuğu
-local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 36)
-TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
-TitleBar.BorderSizePixel = 0
-TitleBar.Parent = Main
+-- Mobil / PC ölçeklendirmesi
+local UIScale = Instance.new("UIScale")
+UIScale.Parent = Main
 
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 8)
-TitleCorner.Parent = TitleBar
+local function UpdateScale()
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+
+    local viewport = camera.ViewportSize
+    local scale = math.min(
+        viewport.X / 370,
+        viewport.Y / 270,
+        1
+    )
+
+    UIScale.Scale = math.clamp(scale, 0.65, 1)
+end
+
+UpdateScale()
+
+local function ConnectCamera(camera)
+    if not camera then return end
+
+    camera:GetPropertyChangedSignal("ViewportSize"):Connect(
+        UpdateScale
+    )
+
+    UpdateScale()
+end
+
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(
+    function()
+        ConnectCamera(workspace.CurrentCamera)
+    end
+)
+
+-- Başlık çubuğu
+local Header = Instance.new("Frame")
+Header.Name = "Header"
+Header.Size = UDim2.new(1, 0, 0, 42)
+Header.BackgroundColor3 = Colors.Header
+Header.BorderSizePixel = 0
+Header.Active = true
+Header.Parent = Main
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -80, 1, 0)
-Title.Position = UDim2.new(0, 12, 0, 0)
+Title.Size = UDim2.new(1, -100, 1, 0)
+Title.Position = UDim2.fromOffset(14, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "DerSpalter Hub"
-Title.TextColor3 = Color3.fromRGB(220, 220, 220)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
+Title.TextColor3 = Colors.Text
+Title.Font = Enum.Font.GothamSemibold
+Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = TitleBar
+Title.Parent = Header
 
--- Kapat Butonu
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 36, 0, 36)
-CloseBtn.Position = UDim2.new(1, -36, 0, 0)
-CloseBtn.BackgroundTransparency = 1
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(220, 80, 80)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 16
-CloseBtn.Parent = TitleBar
+-- Düğme oluşturucu
+local function CreateButton(parent, name, text, size, position)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = size
+    button.Position = position
+    button.BackgroundColor3 = Colors.Button
+    button.BorderSizePixel = 0
+    button.Text = text
+    button.TextColor3 = Colors.Text
+    button.Font = Enum.Font.GothamMedium
+    button.TextSize = 13
+    button.AutoButtonColor = false
+    button.Parent = parent
 
-CloseBtn.MouseButton1Click:Connect(function()
-	ScreenGui:Destroy()
-end)
+    Instance.new("UICorner", button).CornerRadius =
+        UDim.new(0, 7)
 
--- Küçült / Büyült Butonu
-local MinimizeBtn = Instance.new("TextButton")
-MinimizeBtn.Size = UDim2.new(0, 36, 0, 36)
-MinimizeBtn.Position = UDim2.new(1, -72, 0, 0)
-MinimizeBtn.BackgroundTransparency = 1
-MinimizeBtn.Text = "–"
-MinimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-MinimizeBtn.Font = Enum.Font.GothamBold
-MinimizeBtn.TextSize = 18
-MinimizeBtn.Parent = TitleBar
+    button.MouseEnter:Connect(function()
+        TweenService:Create(
+            button,
+            TweenInfo.new(0.15),
+            {BackgroundColor3 = Colors.Border}
+        ):Play()
+    end)
 
-local minimized = false
-local originalSize = Main.Size
+    button.MouseLeave:Connect(function()
+        if button.Parent then
+            TweenService:Create(
+                button,
+                TweenInfo.new(0.15),
+                {BackgroundColor3 = Colors.Button}
+            ):Play()
+        end
+    end)
 
-MinimizeBtn.MouseButton1Click:Connect(function()
-	minimized = not minimized
-	if minimized then
-		Main:TweenSize(UDim2.new(0, 320, 0, 36), "Out", "Quad", 0.25, true)
-		MinimizeBtn.Text = "+"
-	else
-		Main:TweenSize(originalSize, "Out", "Quad", 0.25, true)
-		MinimizeBtn.Text = "–"
-	end
-end)
+    return button
+end
 
--- Sürükleme
-local dragging, dragInput, dragStart, startPos
-TitleBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = Main.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
+-- Küçültme düğmesi
+local MinimizeBtn = CreateButton(
+    Header,
+    "Minimize",
+    "−",
+    UDim2.fromOffset(34, 30),
+    UDim2.new(1, -76, 0, 6)
+)
+MinimizeBtn.TextSize = 19
 
-TitleBar.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		dragInput = input
-	end
-end)
+-- Kapatma düğmesi
+local CloseBtn = CreateButton(
+    Header,
+    "Close",
+    "×",
+    UDim2.fromOffset(34, 30),
+    UDim2.new(1, -38, 0, 6)
+)
+CloseBtn.TextColor3 = Colors.Red
+CloseBtn.TextSize = 19
 
-UserInputService.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		local delta = input.Position - dragStart
-		Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
--- İçerik
+-- İçerik alanı
 local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1, -20, 1, -50)
-Content.Position = UDim2.new(0, 10, 0, 45)
+Content.Name = "Content"
+Content.Size = UDim2.new(1, -24, 1, -56)
+Content.Position = UDim2.fromOffset(12, 50)
 Content.BackgroundTransparency = 1
 Content.Parent = Main
 
--- Auto Rep Toggle
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(1, 0, 0, 40)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-ToggleBtn.Text = "Auto Rep  |  KAPALI"
-ToggleBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-ToggleBtn.Font = Enum.Font.Gotham
-ToggleBtn.TextSize = 14
-ToggleBtn.Parent = Content
+local SectionTitle = Instance.new("TextLabel")
+SectionTitle.Size = UDim2.new(1, 0, 0, 24)
+SectionTitle.BackgroundTransparency = 1
+SectionTitle.Text = "GENEL"
+SectionTitle.TextColor3 = Colors.Muted
+SectionTitle.Font = Enum.Font.GothamMedium
+SectionTitle.TextSize = 11
+SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+SectionTitle.Parent = Content
 
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 6)
-ToggleCorner.Parent = ToggleBtn
+-- Auto Rep arayüz düğmesi
+-- Bu prototipte yalnızca görsel durumu değiştirir.
+local ToggleBtn = CreateButton(
+    Content,
+    "FeatureToggle",
+    "Auto Rep  •  KAPALI",
+    UDim2.new(1, 0, 0, 42),
+    UDim2.fromOffset(0, 32)
+)
 
 local enabled = false
-ToggleBtn.MouseButton1Click:Connect(function()
-	enabled = not enabled
-	getgenv().AutoRep = enabled
-	if enabled then
-		ToggleBtn.Text = "Auto Rep  |  AÇIK"
-		ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 70)
-		ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
-	else
-		ToggleBtn.Text = "Auto Rep  |  KAPALI"
-		ToggleBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-		ToggleBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-	end
+
+ToggleBtn.Activated:Connect(function()
+    enabled = not enabled
+
+    if enabled then
+        ToggleBtn.Text = "Auto Rep  •  AÇIK"
+        ToggleBtn.BackgroundColor3 = Colors.Accent
+        ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+    else
+        ToggleBtn.Text = "Auto Rep  •  KAPALI"
+        ToggleBtn.BackgroundColor3 = Colors.Button
+        ToggleBtn.TextColor3 = Colors.Text
+    end
 end)
 
-print("DerSpalter Hub yüklendi")
+-- Alt bilgi
+local Footer = Instance.new("TextLabel")
+Footer.Size = UDim2.new(1, 0, 0, 22)
+Footer.Position = UDim2.new(0, 0, 1, -22)
+Footer.BackgroundTransparency = 1
+Footer.Text = "DerSpalter • Minimal Edition"
+Footer.TextColor3 = Colors.Muted
+Footer.Font = Enum.Font.Gotham
+Footer.TextSize = 10
+Footer.TextXAlignment = Enum.TextXAlignment.Left
+Footer.Parent = Content
+
+-- Küçültme / geri açma
+local minimized = false
+
+MinimizeBtn.Activated:Connect(function()
+    minimized = not minimized
+    Content.Visible = not minimized
+
+    local targetSize
+
+    if minimized then
+        targetSize = UDim2.fromOffset(340, 42)
+        MinimizeBtn.Text = "+"
+    else
+        targetSize = UDim2.fromOffset(340, 225)
+        MinimizeBtn.Text = "−"
+    end
+
+    TweenService:Create(
+        Main,
+        TweenInfo.new(0.2, Enum.EasingStyle.Quad),
+        {Size = targetSize}
+    ):Play()
+end)
+
+-- Kapatma
+CloseBtn.Activated:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Sürükleme: fare ve dokunmatik
+local dragging = false
+local dragStart
+local startPosition
+local dragInput
+
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+
+        dragging = true
+        dragStart = input.Position
+        startPosition = Main.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+Header.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - dragStart
+
+        Main.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+end)
+
+print("DerSpalter Hub Minimal Edition yüklendi")
