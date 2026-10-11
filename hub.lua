@@ -1,4 +1,4 @@
--- DerSpalter Hub v2 (Modern UI)
+-- DerSpalter Hub v3 (Modern UI + Kategoriler + TP)
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -91,6 +91,37 @@ task.spawn(function()
 end)
 
 -- ============================
+-- TP NOKTALARI
+-- ============================
+local TP_LOCATIONS = {
+	-- Gym'ler
+	{name = "Jungle Gym",          pos = Vector3.new(-8173, 64, 1898)},
+	{name = "Muscle King Gym",     pos = Vector3.new(-8646, 17, -5738)},
+	{name = "Legends Gym",         pos = Vector3.new(4111, 1020, -3799)},
+	{name = "Mythical Gym",        pos = Vector3.new(2371, 39, 1246)},
+	{name = "Frost Gym",           pos = Vector3.new(-3013, 39, -335)},
+	{name = "Eternal Gym",         pos = Vector3.new(-7176, 45, -1106)},
+
+	-- Adalar / Bölgeler
+	{name = "Spawn",               pos = Vector3.new(2, 8, 115)},
+	{name = "Starter Island",      pos = Vector3.new(-17, 3, -2)},
+	{name = "Tiny Island",         pos = Vector3.new(-34, 7, 1903)},
+	{name = "Secret Area",         pos = Vector3.new(1947, 2, 6191)},
+	{name = "Legend Beach",        pos = Vector3.new(470, 3, -321)},
+	{name = "Frozen Island",       pos = Vector3.new(-2600, 4, -404)},
+	{name = "Mythical Island",     pos = Vector3.new(2255, 7, 1071)},
+	{name = "Hell Island",         pos = Vector3.new(-6768, 7, -1287)},
+	{name = "Legend Island",       pos = Vector3.new(4604, 991, -3887)},
+	{name = "Muscle King Island",  pos = Vector3.new(-8646, 17, -5738)},
+	{name = "Jungle Island",       pos = Vector3.new(-8659, 6, 2384)},
+
+	-- Brawl alanları
+	{name = "Brawl Lava",          pos = Vector3.new(4471, 119, -8836)},
+	{name = "Brawl Desert",        pos = Vector3.new(960, 17, -7398)},
+	{name = "Brawl Regular",       pos = Vector3.new(-1849, 20, -6335)},
+}
+
+-- ============================
 -- UI BAŞLANGIÇ
 -- ============================
 local ScreenGui = Instance.new("ScreenGui")
@@ -99,11 +130,10 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Ana Frame
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.new(0, 360, 0, 400)
-Main.Position = UDim2.new(0.5, -180, 0.5, -200)
+Main.Size = UDim2.new(0, 380, 0, 480)
+Main.Position = UDim2.new(0.5, -190, 0.5, -240)
 Main.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 Main.BorderSizePixel = 0
 Main.Active = true
@@ -119,7 +149,6 @@ MainStroke.Thickness = 1.2
 MainStroke.Transparency = 0.3
 MainStroke.Parent = Main
 
--- Gradient Arka Plan
 local MainGradient = Instance.new("UIGradient")
 MainGradient.Rotation = 90
 MainGradient.Color = ColorSequence.new({
@@ -140,7 +169,6 @@ local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 14)
 TitleCorner.Parent = TitleBar
 
--- Başlık çubuğunun alt köşelerini düzleştirmek için ekstra frame
 local TitleFix = Instance.new("Frame")
 TitleFix.Size = UDim2.new(1, 0, 0, 14)
 TitleFix.Position = UDim2.new(0, 0, 1, -14)
@@ -156,7 +184,6 @@ TitleGradient.Color = ColorSequence.new({
 })
 TitleGradient.Parent = TitleBar
 
--- Logo Noktası
 local LogoDot = Instance.new("Frame")
 LogoDot.Size = UDim2.new(0, 8, 0, 8)
 LogoDot.Position = UDim2.new(0, 16, 0.5, -4)
@@ -168,7 +195,6 @@ local LogoDotCorner = Instance.new("UICorner")
 LogoDotCorner.CornerRadius = UDim.new(1, 0)
 LogoDotCorner.Parent = LogoDot
 
--- Başlık Yazısı
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -120, 1, 0)
 Title.Position = UDim2.new(0, 32, 0, 0)
@@ -180,12 +206,11 @@ Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TitleBar
 
--- Sürüm etiketi
 local VersionTag = Instance.new("TextLabel")
 VersionTag.Size = UDim2.new(0, 60, 0, 20)
 VersionTag.Position = UDim2.new(1, -130, 0.5, -10)
 VersionTag.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-VersionTag.Text = "v2.0"
+VersionTag.Text = "v3.0"
 VersionTag.TextColor3 = Color3.fromRGB(200, 200, 220)
 VersionTag.Font = Enum.Font.GothamMedium
 VersionTag.TextSize = 10
@@ -253,13 +278,138 @@ end)
 local minimized = false
 local originalSize = Main.Size
 
+-- ============================
+-- KATEGORİ SEKMELERİ (Tab Bar)
+-- ============================
+local TabBar = Instance.new("Frame")
+TabBar.Name = "TabBar"
+TabBar.Size = UDim2.new(1, -24, 0, 34)
+TabBar.Position = UDim2.new(0, 12, 0, 56)
+TabBar.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
+TabBar.BorderSizePixel = 0
+TabBar.Parent = Main
+
+local TabBarCorner = Instance.new("UICorner")
+TabBarCorner.CornerRadius = UDim.new(0, 8)
+TabBarCorner.Parent = TabBar
+
+local TabLayout = Instance.new("UIListLayout")
+TabLayout.FillDirection = Enum.FillDirection.Horizontal
+TabLayout.Padding = UDim.new(0, 6)
+TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabLayout.Parent = TabBar
+
+local TabPadding = Instance.new("UIPadding")
+TabPadding.PaddingLeft = UDim.new(0, 6)
+TabPadding.PaddingRight = UDim.new(0, 6)
+TabPadding.PaddingTop = UDim.new(0, 4)
+TabPadding.PaddingBottom = UDim.new(0, 4)
+TabPadding.Parent = TabBar
+
+-- İçerik
+local Content = Instance.new("Frame")
+Content.Name = "Content"
+Content.Size = UDim2.new(1, -24, 1, -140)
+Content.Position = UDim2.new(0, 12, 0, 98)
+Content.BackgroundTransparency = 1
+Content.Parent = Main
+
+-- İki ayrı sayfa (Frame)
+local FarmPage = Instance.new("ScrollingFrame")
+FarmPage.Name = "FarmPage"
+FarmPage.Size = UDim2.new(1, 0, 1, 0)
+FarmPage.BackgroundTransparency = 1
+FarmPage.BorderSizePixel = 0
+FarmPage.ScrollBarThickness = 4
+FarmPage.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 110)
+FarmPage.CanvasSize = UDim2.new(0, 0, 0, 0)
+FarmPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
+FarmPage.Visible = true
+FarmPage.Parent = Content
+
+local FarmLayout = Instance.new("UIListLayout")
+FarmLayout.Padding = UDim.new(0, 10)
+FarmLayout.SortOrder = Enum.SortOrder.LayoutOrder
+FarmLayout.Parent = FarmPage
+
+local TPPage = Instance.new("ScrollingFrame")
+TPPage.Name = "TPPage"
+TPPage.Size = UDim2.new(1, 0, 1, 0)
+TPPage.BackgroundTransparency = 1
+TPPage.BorderSizePixel = 0
+TPPage.ScrollBarThickness = 4
+TPPage.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 110)
+TPPage.CanvasSize = UDim2.new(0, 0, 0, 0)
+TPPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
+TPPage.Visible = false
+TPPage.Parent = Content
+
+local TPLayout = Instance.new("UIListLayout")
+TPLayout.Padding = UDim.new(0, 8)
+TPLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TPLayout.Parent = TPPage
+
+-- Sekme butonları
+local function createTabButton(name, layoutOrder, page)
+	local Btn = Instance.new("TextButton")
+	Btn.Size = UDim2.new(0.5, -3, 1, 0)
+	Btn.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+	Btn.Text = name
+	Btn.TextColor3 = Color3.fromRGB(180, 180, 200)
+	Btn.Font = Enum.Font.GothamSemibold
+	Btn.TextSize = 12
+	Btn.AutoButtonColor = false
+	Btn.LayoutOrder = layoutOrder
+	Btn.Parent = TabBar
+
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = UDim.new(0, 6)
+	Corner.Parent = Btn
+
+	local function setActive(active)
+		if active then
+			TweenService:Create(Btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(80, 140, 240), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+		else
+			TweenService:Create(Btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(35, 35, 48), TextColor3 = Color3.fromRGB(180, 180, 200)}):Play()
+		end
+	end
+
+	Btn.MouseButton1Click:Connect(function()
+		FarmPage.Visible = (page == "farm")
+		TPPage.Visible = (page == "tp")
+		for _, btn in pairs(TabBar:GetChildren()) do
+			if btn:IsA("TextButton") then
+				if btn == Btn then setActive(true) else
+					TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(35, 35, 48), TextColor3 = Color3.fromRGB(180, 180, 200)}):Play()
+				end
+			end
+		end
+	end)
+
+	return Btn, setActive
+end
+
+local farmTabBtn, setFarmActive = createTabButton("FARM", 1, "farm")
+local tpTabBtn, setTPActive = createTabButton("TP", 2, "tp")
+setFarmActive(true)
+
+-- ============================
+-- KÜÇÜLTME
+-- ============================
 MinimizeBtn.MouseButton1Click:Connect(function()
 	minimized = not minimized
 	if minimized then
-		Main:TweenSize(UDim2.new(0, 360, 0, 44), "Out", "Quad", 0.25, true)
+		Content.Visible = false
+		TabBar.Visible = false
+		TitleFix.Visible = false
+		Main:TweenSize(UDim2.new(0, 380, 0, 44), "Out", "Quad", 0.25, true)
 		MinimizeBtn.Text = "+"
 	else
 		Main:TweenSize(originalSize, "Out", "Quad", 0.25, true)
+		task.wait(0.25)
+		Content.Visible = true
+		TabBar.Visible = true
+		TitleFix.Visible = true
 		MinimizeBtn.Text = "–"
 	end
 end)
@@ -291,31 +441,16 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- ============================
--- İÇERİK
+-- TOGGLE OLUŞTURMA
 -- ============================
-local Content = Instance.new("Frame")
-Content.Name = "Content"
-Content.Size = UDim2.new(1, -24, 1, -80)
-Content.Position = UDim2.new(0, 12, 0, 58)
-Content.BackgroundTransparency = 1
-Content.Parent = Main
-
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Padding = UDim.new(0, 10)
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Parent = Content
-
--- ============================
--- TOGGLE OLUŞTURMA FONKSİYONU
--- ============================
-local function createToggle(name, icon, layoutOrder, callback)
+local function createToggle(parent, name, icon, layoutOrder, callback)
 	local Btn = Instance.new("TextButton")
 	Btn.Size = UDim2.new(1, 0, 0, 52)
 	Btn.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
 	Btn.Text = ""
 	Btn.AutoButtonColor = false
 	Btn.LayoutOrder = layoutOrder
-	Btn.Parent = Content
+	Btn.Parent = parent
 
 	local Corner = Instance.new("UICorner")
 	Corner.CornerRadius = UDim.new(0, 10)
@@ -327,7 +462,6 @@ local function createToggle(name, icon, layoutOrder, callback)
 	Stroke.Transparency = 0.4
 	Stroke.Parent = Btn
 
-	-- İkon dairesi
 	local IconCircle = Instance.new("Frame")
 	IconCircle.Size = UDim2.new(0, 32, 0, 32)
 	IconCircle.Position = UDim2.new(0, 12, 0.5, -16)
@@ -348,7 +482,6 @@ local function createToggle(name, icon, layoutOrder, callback)
 	IconLabel.TextSize = 16
 	IconLabel.Parent = IconCircle
 
-	-- Başlık
 	local BtnTitle = Instance.new("TextLabel")
 	BtnTitle.Size = UDim2.new(1, -140, 0, 20)
 	BtnTitle.Position = UDim2.new(0, 56, 0, 10)
@@ -360,7 +493,6 @@ local function createToggle(name, icon, layoutOrder, callback)
 	BtnTitle.TextXAlignment = Enum.TextXAlignment.Left
 	BtnTitle.Parent = Btn
 
-	-- Durum yazısı
 	local StatusLabel = Instance.new("TextLabel")
 	StatusLabel.Size = UDim2.new(1, -140, 0, 16)
 	StatusLabel.Position = UDim2.new(0, 56, 0, 28)
@@ -372,7 +504,6 @@ local function createToggle(name, icon, layoutOrder, callback)
 	StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 	StatusLabel.Parent = Btn
 
-	-- Toggle anahtarı
 	local Switch = Instance.new("Frame")
 	Switch.Size = UDim2.new(0, 42, 0, 22)
 	Switch.Position = UDim2.new(1, -54, 0.5, -11)
@@ -395,7 +526,6 @@ local function createToggle(name, icon, layoutOrder, callback)
 	DotCorner.CornerRadius = UDim.new(1, 0)
 	DotCorner.Parent = SwitchDot
 
-	-- Hover efekti
 	Btn.MouseEnter:Connect(function()
 		TweenService:Create(Btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(36, 36, 50)}):Play()
 		TweenService:Create(Stroke, TweenInfo.new(0.15), {Color = Color3.fromRGB(90, 90, 140)}):Play()
@@ -405,11 +535,10 @@ local function createToggle(name, icon, layoutOrder, callback)
 		TweenService:Create(Stroke, TweenInfo.new(0.15), {Color = Color3.fromRGB(50, 50, 70)}):Play()
 	end)
 
-	-- Tıklama
 	local isOn = false
 	Btn.MouseButton1Click:Connect(function()
 		local result = callback(isOn)
-		if result == false then return end -- callback reddettiyse değiştirme
+		if result == false then return end
 
 		isOn = not isOn
 		if isOn then
@@ -431,43 +560,35 @@ local function createToggle(name, icon, layoutOrder, callback)
 end
 
 -- ============================
--- TOGGLE'LARI OLUŞTUR
+-- TP BUTONU OLUŞTURMA
 -- ============================
+local function createTPButton(parent, name, pos, layoutOrder)
+	local Btn = Instance.new("TextButton")
+	Btn.Size = UDim2.new(1, 0, 0, 38)
+	Btn.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+	Btn.Text = ""
+	Btn.AutoButtonColor = false
+	Btn.LayoutOrder = layoutOrder
+	Btn.Parent = parent
 
--- Auto Rep
-createToggle("Auto Rep", "⚡", 1, function(currentState)
-	if not muscleEvent then
-		return false
-	end
-	local newState = not currentState
-	getgenv().AutoRep = newState
-	return true
-end)
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = UDim.new(0, 8)
+	Corner.Parent = Btn
 
--- Auto Rebirth
-createToggle("Auto Rebirth", "🔄", 2, function(currentState)
-	local newState = not currentState
-	getgenv().AutoRebirth = newState
-	return true
-end)
+	local Stroke = Instance.new("UIStroke")
+	Stroke.Color = Color3.fromRGB(50, 50, 70)
+	Stroke.Thickness = 1
+	Stroke.Transparency = 0.4
+	Stroke.Parent = Btn
 
--- Lock Point
-createToggle("Lock Point", "🔒", 3, function(currentState)
-	local newState = not currentState
-	getgenv().LockPoint = newState
-	return true
-end)
+	local Pin = Instance.new("TextLabel")
+	Pin.Size = UDim2.new(0, 24, 1, 0)
+	Pin.Position = UDim2.new(0, 12, 0, 0)
+	Pin.BackgroundTransparency = 1
+	Pin.Text = "📍"
+	Pin.TextColor3 = Color3.fromRGB(180, 180, 220)
+	Pin.Font = Enum.Font.GothamBold
+	Pin.TextSize = 14
+	Pin.Parent = Btn
 
--- Alt bilgi
-local Footer = Instance.new("TextLabel")
-Footer.Size = UDim2.new(1, 0, 0, 20)
-Footer.Position = UDim2.new(0, 0, 1, -25)
-Footer.BackgroundTransparency = 1
-Footer.Text = "DerSpalter Hub  •  made with ❤"
-Footer.TextColor3 = Color3.fromRGB(90, 90, 110)
-Footer.Font = Enum.Font.Gotham
-Footer.TextSize = 10
-Footer.LayoutOrder = 10
-Footer.Parent = Content
-
-print("DerSpalter Hub v2 yüklendi")
+	local Label = In
