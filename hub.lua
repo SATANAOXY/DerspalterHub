@@ -1,4 +1,4 @@
--- DerSpalter Hub v4 (Silence UI)
+-- DerSpalter Hub v4 (Silence UI + Stats Panel)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
@@ -13,10 +13,12 @@ local window = library:AddWindow("DerSpalter Hub", {
 })
 
 local farmTab = window:AddTab("Farm")
+local statsTab = window:AddTab("Stats")
 local tpTab = window:AddTab("TP")
 local infoTab = window:AddTab("Info")
 
 getgenv().AutoRep = false
+getgenv().FastAutoRep = false
 getgenv().AutoRebirth = false
 getgenv().LockPoint = false
 getgenv().AutoSpin = false
@@ -50,9 +52,30 @@ task.spawn(function()
 	end
 end)
 
+-- Normal Auto Rep
 task.spawn(function()
 	while true do
 		if getgenv().AutoRep then
+			pcall(function()
+				if LocalPlayer:FindFirstChild("MuscleEvent") then
+					for i = 1, 4 do
+						LocalPlayer.MuscleEvent:FireServer("rep")
+					end
+				elseif LocalPlayer:FindFirstChild("muscleEvent") then
+					for i = 1, 4 do
+						LocalPlayer.muscleEvent:FireServer("rep")
+					end
+				end
+			end)
+		end
+		task.wait(0.1)
+	end
+end)
+
+-- Hızlı Auto Rep
+task.spawn(function()
+	while true do
+		if getgenv().FastAutoRep then
 			pcall(function()
 				if LocalPlayer:FindFirstChild("MuscleEvent") then
 					for i = 1, 28 do
@@ -86,7 +109,6 @@ task.spawn(function()
 	end
 end)
 
--- Çark çevirme
 local wheelRemote, wheelChances
 pcall(function()
 	wheelRemote = ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("openFortuneWheelRemote")
@@ -108,8 +130,58 @@ task.spawn(function()
 	end
 end)
 
+-- Sayı formatlama
+local function formatNumber(n)
+	if n >= 1e18 then return string.format("%.2fQi", n / 1e18)
+	elseif n >= 1e15 then return string.format("%.2fQa", n / 1e15)
+	elseif n >= 1e12 then return string.format("%.2fT", n / 1e12)
+	elseif n >= 1e9 then return string.format("%.2fB", n / 1e9)
+	elseif n >= 1e6 then return string.format("%.2fM", n / 1e6)
+	elseif n >= 1e3 then return string.format("%.2fK", n / 1e3)
+	else return string.format("%.0f", n) end
+end
+
+local function formatTime(seconds)
+	local days = math.floor(seconds / 86400)
+	local hours = math.floor((seconds % 86400) / 3600)
+	local mins = math.floor((seconds % 3600) / 60)
+	local secs = math.floor(seconds % 60)
+	return string.format("%dd %dh %dm %ds", days, hours, mins, secs)
+end
+
+-- Stats verileri
+local StatsData = {
+	Running = false,
+	StartTime = 0,
+	StartStrength = 0,
+	CurrentStrength = 0,
+	Gained = 0,
+}
+
+-- Strength değerini al
+local function getStrength()
+	local ok, val = pcall(function()
+		return LocalPlayer.leaderstats.Strength.Value
+	end)
+	return ok and val or 0
+end
+
+-- ============================
+-- FARM SEKMESİ
+-- ============================
 farmTab:AddLabel("Strength Farming:")
-farmTab:AddSwitch("Auto Rep", function(state) getgenv().AutoRep = state end)
+farmTab:AddSwitch("Auto Rep (Normal)", function(state) getgenv().AutoRep = state end)
+farmTab:AddSwitch("Auto Rep (Hızlı)", function(state)
+	getgenv().FastAutoRep = state
+	if state then
+		StatsData.Running = true
+		StatsData.StartTime = tick()
+		StatsData.StartStrength = getStrength()
+		StatsData.Gained = 0
+	else
+		StatsData.Running = false
+	end
+end)
 farmTab:AddSwitch("Auto Rebirth", function(state) getgenv().AutoRebirth = state end)
 farmTab:AddSwitch("Lock Point", function(state) getgenv().LockPoint = state end)
 farmTab:AddLabel("Not: Lock Point açıkken karakter olduğu yerde kalır.")
@@ -118,6 +190,60 @@ farmTab:AddLabel("")
 farmTab:AddLabel("Çark Çevirme:")
 farmTab:AddSwitch("Auto Spin Fortune Wheel", function(state) getgenv().AutoSpin = state end)
 
+-- ============================
+-- STATS SEKMESİ
+-- ============================
+statsTab:AddLabel("Hızlı Farm İstatistikleri:")
+statsTab:AddLabel("Hızlı Auto Rep açıldığında otomatik başlar.")
+statsTab:AddLabel("")
+
+local timerLabel = statsTab:AddLabel("⏱️ Süre: 0d 0h 0m 0s")
+local gainedLabel = statsTab:AddLabel("💪 Kazanılan Strength: 0")
+local startLabel = statsTab:AddLabel("📊 Başlangıç Strength: 0")
+local currentLabel = statsTab:AddLabel("📊 Şu Anki Strength: 0")
+statsTab:AddLabel("")
+local hourLabel = statsTab:AddLabel("📈 Saatlik: 0")
+local dayLabel = statsTab:AddLabel("📈 Günlük: 0")
+local weekLabel = statsTab:AddLabel("📈 Haftalık: 0")
+local monthLabel = statsTab:AddLabel("📈 Aylık: 0")
+
+statsTab:AddLabel("")
+statsTab:AddButton("Sıfırla", function()
+	StatsData.StartTime = tick()
+	StatsData.StartStrength = getStrength()
+	StatsData.Gained = 0
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		if StatsData.Running then
+			local elapsed = tick() - StatsData.StartTime
+			local current = getStrength()
+			local gained = current - StatsData.StartStrength
+
+			StatsData.CurrentStrength = current
+			StatsData.Gained = gained
+
+			timerLabel.Text = "⏱️ Süre: " .. formatTime(elapsed)
+			gainedLabel.Text = "💪 Kazanılan Strength: " .. formatNumber(gained)
+			startLabel.Text = "📊 Başlangıç Strength: " .. formatNumber(StatsData.StartStrength)
+			currentLabel.Text = "📊 Şu Anki Strength: " .. formatNumber(current)
+
+			if elapsed > 1 and gained > 0 then
+				local perSecond = gained / elapsed
+				hourLabel.Text = "📈 Saatlik: " .. formatNumber(perSecond * 3600)
+				dayLabel.Text = "📈 Günlük: " .. formatNumber(perSecond * 86400)
+				weekLabel.Text = "📈 Haftalık: " .. formatNumber(perSecond * 604800)
+				monthLabel.Text = "📈 Aylık: " .. formatNumber(perSecond * 2592000)
+			end
+		end
+	end
+end)
+
+-- ============================
+-- TP SEKMESİ
+-- ============================
 local TP_LOCATIONS = {
 	{name = "Jungle Gym",          pos = Vector3.new(-8173, 64, 1898)},
 	{name = "Muscle King Gym",     pos = Vector3.new(-8646, 17, -5738)},
@@ -155,6 +281,9 @@ for _, loc in ipairs(TP_LOCATIONS) do
 	end)
 end
 
+-- ============================
+-- INFO SEKMESİ
+-- ============================
 infoTab:AddLabel("DerSpalter Hub v4")
 infoTab:AddLabel("Anti-AFK otomatik çalışır.")
 infoTab:AddLabel("Lock Point açıkken karakter olduğu yerde kalır.")
@@ -162,5 +291,6 @@ infoTab:AddLabel("TP atınca Lock Point otomatik kapanır.")
 infoTab:AddLabel("")
 infoTab:AddLabel("Farm sekmesinden özellikleri açıp kapatabilirsin.")
 infoTab:AddLabel("TP sekmesinden istediğin yere ışınlanabilirsin.")
+infoTab:AddLabel("Stats sekmesi Hızlı Auto Rep açıkken otomatik sayar.")
 
-print("DerSpalter Hub v4 yüklendi")
+print("DerSpalter Hub v4 yüklendi (Stats Panel)")
